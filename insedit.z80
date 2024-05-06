@@ -1,0 +1,1110 @@
+;Instrument Editor
+
+blau:
+	equ	%00001110
+rot:
+		equ	%10101010
+ptab:
+		equ	#c
+mbase:
+		equ	#2400
+etx:
+	equ	mbase+#1e
+atx:
+	equ	mbase+#20
+tx2:
+	equ	mbase+#22
+instab:
+	equ	#4000
+orntab:
+	equ	#4060
+inams:
+	equ	#4b18
+cls:
+	equ	#8003
+loc:
+	equ	#9000
+chr:
+	equ	#9005
+text:
+	equ	#9008
+maus:
+	equ	#900b
+hexo:
+	equ	#900e
+out:
+	equ	#9011
+noten:
+	equ	#9014
+cler:
+	equ	#9017
+taus:
+	equ	#901a
+sync:
+	equ	#901d
+swi:
+	equ	#9020
+ixtab:
+	equ	#af08
+taste:
+	equ	#bb1b
+	;ent	#9002
+	org	#8800
+	jp	insed
+	jp	ornam
+insed:
+	xor	a
+	ld	(wich),a
+	ld	a,15
+	ld	(maxe),a
+	call	cls
+	ld	hl,tx11
+	call	text
+	ld	hl,(tx2)
+	call	text
+loo:
+	call	era
+	call	insin
+	cp	#fc
+	jp	z,end
+loop:
+	call	sync
+	call	taste
+	jr	nc,loop
+	cp	#fc
+	jp	z,end
+	cp	9
+	call	z,copy
+	cp	13
+	jr	z,loo
+	cp	16
+	call	z,jupp
+	cp	32
+	call	z,shalt
+	cp	127
+	call	z,dell
+	cp	#87
+	call	z,incr
+	cp	#84
+	call	z,decr
+	cp	#89
+	call	z,incl
+	cp	#86
+	call	z,decl
+	cp	#8b
+	jp	z,tonenv
+	call	swi
+	cp	224
+	call	z,mask
+	cp	242
+	call	z,left
+	cp	243
+	call	z,rigt
+	cp	240
+	call	z,up
+	cp	241
+	call	z,down
+	cp	244
+	call	z,rup
+	cp	245
+	call	z,rdo
+	cp	246
+	call	z,rol
+	cp	247
+	call	z,ror
+	call	noten
+	jr	loop
+left:
+	call	era
+	ld	a,(xpos)
+	dec	a
+	and	31
+	ld	(xpos),a
+	jp	pfeil
+jupp:
+	call	dell
+rigt:
+	call	era
+	ld	a,(xpos)
+	inc	a
+	and	31
+	ld	(xpos),a
+	jp	pfeil
+mask:
+	ld	a,(xpos)
+	or	a
+	ret	z
+	ld	a,(iy)
+	xor	128
+	ld	(iy),a
+	call	balk
+	jr	rigt
+up:
+	ld	hl,maxe
+	ld	a,(iy)
+	inc	a
+	and	(hl)
+	ld	(iy),a
+	jp	balk
+down:
+	ld	hl,maxe
+	ld	a,(iy)
+	dec	a
+	and	(hl)
+	ld	(iy),a
+	jp	balk
+dell:
+	xor	a
+	ld	(iy),a
+	jp	balk
+copy:
+	ld	a,(iy)
+	push	af
+	call	rigt
+	pop	af
+	ld	(iy),a
+	jp	balk
+rup:
+	call	clg
+	ld	ix,(adr)
+	ld	b,32
+	ld	hl,maxe
+rup1:
+	ld	a,(ix)
+	bit	7,a
+	jr	nz,rup3
+	cp	(hl)
+	jr	z,rup3
+	inc	a
+	ld	(ix),a
+rup3:
+	inc	ix
+	djnz	rup1
+	jr	pint
+rdo:
+	call	clg
+	ld	ix,(adr)
+	ld	b,32
+	ld	hl,maxe
+rup2:
+	ld	a,(ix)
+	bit	7,a
+	jr	nz,rup4
+	or	a
+	jr	z,rup4
+	dec	a
+	ld	(ix),a
+rup4:
+	inc	ix
+	djnz	rup2
+	jr	pint
+rol:
+	call	clg
+	ld	ix,(adr)
+	ld	b,31
+	ld	c,(ix)
+rol1:
+	ld	a,(ix+1)
+	ld	(ix),a
+	inc	ix
+	djnz	rol1
+	ld	(ix),c
+	jr	pint
+ror:
+	call	clg
+	ld	ix,(adr)
+	ld	b,31
+	ld	c,(ix+31)
+ror1:
+	ld	a,(ix+30)
+	ld	(ix+31),a
+	dec	ix
+	djnz	ror1
+	ld	(ix+31),c
+pint:
+	ld	a,(wich)
+	or	a
+	jp	nz,pntb
+	jp	pnta
+pfeil:
+	ld	a,(xpos)
+	ld	d,0
+	ld	e,a
+	ld	iy,(adr)
+	add	iy,de
+	ld	hl,(klik)
+	add	hl,de
+	ld	(epos),hl
+	ld	hl,(curs)
+	add	hl,de
+	ld	(hl),%11111111
+	call	next
+	ld	(hl),%01100110
+	call	next
+	ld	(hl),%01100110
+	jr	numb
+balk:
+	ld	hl,(epos)
+	push	hl
+	ld	de,-320
+	add	hl,de
+	ld	b,32
+erna:
+	ld	(hl),0
+	call	next
+	djnz	erna
+	pop	hl
+	call	coll+1
+numb:
+	ld	hl,#2610
+	ld	(loc),hl
+	ld	a,(iy)
+	and	127
+	call	decz
+	xor	a
+	ret
+era:
+	ld	a,(xpos)
+	ld	d,0
+	ld	e,a
+	ld	hl,(curs)
+	add	hl,de
+	ld	(hl),0
+	call	next
+	ld	(hl),0
+	call	next
+	ld	(hl),0
+	ret
+shalt:
+	call	era
+	ld	a,(maxe)
+	xor	16
+	ld	(maxe),a
+	ld	a,(wich)
+	xor	1
+shal1:
+	ld	(wich),a
+	add	a,a
+	ld	b,a
+	add	a,a
+	add	a,b
+	ld	d,0
+	ld	e,a
+	ld	hl,env
+	add	hl,de
+	ld	de,adr
+	ldi
+	ldi
+	ldi
+	ldi
+	ldi
+	ldi
+	xor	a
+	ld	(xpos),a
+	jp	pfeil
+incr:
+	ld	hl,(repl)
+	ld	b,(hl)
+	ld	hl,(repe)
+	ld	a,(hl)
+	add	a,b
+	cp	32
+	ld	a,0
+	ret	nc
+	inc	(hl)
+	jr	prir
+decr:
+	ld	hl,(repe)
+	ld	a,(hl)
+	or	a
+	ret	z
+	dec	(hl)
+prir:
+	ld	a,(hl)
+	ld	hl,#1710
+	ld	(loc),hl
+	call	decz
+	xor	a
+	ret
+incl:
+	ld	hl,(repe)
+	ld	b,(hl)
+	ld	hl,(repl)
+	ld	a,(hl)
+	add	a,b
+	cp	32
+	ld	a,0
+	ret	nc
+	inc	(hl)
+	jr	pril
+decl:
+	ld	hl,(repl)
+	ld	a,(hl)
+	or	a
+	ret	z
+	dec	(hl)
+pril:
+	ld	a,(hl)
+	ld	hl,#2210
+	ld	(loc),hl
+	call	decz
+	xor	a
+	ret
+insin:
+	call	clsa
+	call	clsb
+	ld	hl,tx1
+	call	text
+	call	hexin
+	cp	#fc
+	ret	z
+	ld	(ins),a
+ins1:
+	call	out
+	ld	a,(ins)
+	add	a,a
+	ld	b,a
+	add	a,a
+	add	a,b
+	ld	d,0
+	ld	e,a
+	ld	hl,instab
+	add	hl,de
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	inc	hl
+	ld	(ent),de
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	inc	hl
+	ld	(env),de
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	ld	(enn),de
+	ld	hl,(ent)
+	ld	de,64
+	add	hl,de
+	ld	(repe),hl
+	inc	hl
+	ld	(repl),hl
+	ld	hl,(repe)
+	call	prir
+	ld	hl,(repl)
+	ld	a,(hl)
+	call	pril
+	xor	a
+	ld	(xpos),a
+	ld	hl,(env)
+	ld	(adr),hl
+	call	paint
+	ld	a,(wich)
+	call	shal1
+	ret
+paint:
+	call	sync
+	ld	a,(maxe)
+	push	af
+	call	pnta
+	call	pntb
+	pop	af
+	ld	(maxe),a
+	sub	a
+	ret
+pnta:
+	ld	a,15
+	ld	(maxe),a
+	ld	hl,(env)
+	ld	de,#f4b4-240
+	jp	male
+pntb:
+	ld	a,31
+	ld	(maxe),a
+	ld	hl,(enn)
+	ld	de,#f4dc-240
+male:
+	ld	b,32
+mall:
+	push	bc
+	push	de
+	push	hl
+	ld	a,(hl)
+	call	coll
+	pop	hl
+	pop	de
+	inc	hl
+	inc	de
+	pop	bc
+	djnz	mall
+	ret
+coll:
+	ex	de,hl
+	ld	c,blau
+	bit	7,a
+	jr	z,kiki
+	ld	c,rot
+kiki:
+	defb	#e6; and maxe
+maxe:
+	defb	15
+	ld	b,a
+	inc	b
+	ld	a,(maxe)
+	bit	4,a
+	jr	nz,full1
+full:
+	ld	(hl),c
+	call	prev
+	ld	(hl),c
+	call	prev
+	djnz	full
+	ret
+full1:
+	ld	(hl),c
+	call	prev
+	djnz	full1
+	ret
+	;
+	; Tonhuellkurven-Editor
+tonenv:
+	call	cls
+	ld	iy,(ent)
+	ld	hl,zah
+	call	bild
+	ld	hl,#1909
+	ld	(loc),hl
+	ld	hl,tx1+3
+	call	text
+	ld	hl,(etx)
+	call	text
+	ld	hl,#2509
+	ld	(loc),hl
+	ld	a,(ins)
+	call	out
+	xor	a
+	call	wimp
+	call	cler
+loop1:
+	call	sync
+	call	taste
+	jr	nc,loop1
+	cp	9
+	call	z,copy1
+	cp	13
+	jp	z,insed
+	cp	#fc
+	jr	z,end
+	cp	127
+	call	z,deli
+	cp	#8b
+	jr	z,back
+	call	swi
+	cp	224
+	call	z,nega
+	cp	240
+	call	z,up1
+	cp	241
+	call	z,dow1
+	cp	242
+	call	z,lef1
+	cp	243
+	call	z,rig1
+	cp	244
+	call	z,add1
+	cp	245
+	call	z,sub1
+	cp	248
+	call	z,add8
+	cp	249
+	call	z,sub8
+	call	noten
+	jr	loop1
+back:
+	call	cls
+	ld	hl,tx11
+	call	text
+	ld	hl,(tx2)
+	call	text
+	ld	hl,tx1
+	call	text
+	ld	a,(ins)
+	call	ins1
+	call	cler
+	jp	loop
+end:
+	call	taus
+	call	cls
+	jp	cler
+up1:
+	call	era1
+	ld	a,(ypos)
+	dec	a
+	jr	wimp
+dow1:
+	call	era1
+	ld	a,(ypos)
+	inc	a
+	jr	wimp
+lef1:
+	call	era1
+	ld	a,(ypos)
+	sub	8
+	jr	wimp
+rig1:
+	call	era1
+	ld	a,(ypos)
+	add	a,8
+wimp:
+	and	31
+	ld	(ypos),a
+	call	posit
+	ld	(loc),hl
+	ld	(luc),hl
+	ld	iy,(ent)
+	add	iy,de
+	add	iy,de
+	ld	a,22
+	call	chr
+	ld	l,(iy)
+	ld	h,(iy+1)
+	call	zahl
+	ld	a,22
+	jp	chr
+deli:
+	ld	hl,0
+	call	mief
+	jr	dow1
+copy1:
+	ld	l,(iy)
+	ld	h,(iy+1)
+	push	hl
+	call	dow1
+	pop	hl
+	ld	(iy),l
+	ld	(iy+1),h
+	ld	a,(ypos)
+	jr	wimp
+nega:
+	ld	e,(iy)
+	ld	d,(iy+1)
+	ld	hl,0
+	and	a
+	sbc	hl,de
+	jr	mief
+add1:
+	ld	l,(iy)
+	ld	h,(iy+1)
+	inc	hl
+	jr	minc
+sub1:
+	ld	l,(iy)
+	ld	h,(iy+1)
+	dec	hl
+	jr	mdec
+add8:
+	ld	l,(iy)
+	ld	h,(iy+1)
+	ld	de,16
+	add	hl,de
+minc:
+	ld	a,h
+	cp	#10
+	jr	nz,mief
+	xor	a
+	ret
+sub8:
+	ld	l,(iy)
+	ld	h,(iy+1)
+	ld	de,-16
+	add	hl,de
+mdec:
+	ld	a,h
+	cp	#ef
+	jr	nz,mief
+	xor	a
+	ret
+mief:
+	ld	(iy),l
+	ld	(iy+1),h
+	push	hl
+	ld	hl,(luc)
+	ld	(loc),hl
+	ld	a,22
+	call	chr
+	pop	hl
+	call	zahl
+	ld	a,22
+	jp	chr
+era1:
+	ld	hl,(luc)
+	ld	(loc),hl
+	ld	l,(iy)
+	ld	h,(iy+1)
+	jp	zahl
+byt:
+	ld	a,(iy)
+	inc	iy
+bye:
+	ld	de,(loc)
+	dec	d
+	ld	(loc),de
+	call	byt1
+	and	#7f
+	push	af
+	ld	a,b
+	call	chr
+	pop	af
+decz:
+	ld	d,10
+	call	dig
+	ld	d,1
+dig:
+	ld	b,48
+digl:
+	cp	d
+	jr	c,diga
+	sub	d
+	inc	b
+	jr	digl
+diga:
+	push	af
+	ld	a,b
+	call	chr
+	pop	af
+	ret
+byt1:
+	ld	b,32
+	or	a
+	ret	z
+	ld	b,"+"
+	cp	#80
+	ret	c
+	ld	b,"-"
+	ld	c,a
+	xor	a
+	sub	c
+	ret
+zah:
+	ld	l,(iy)
+	ld	h,(iy+1)
+	inc	iy
+	inc	iy
+zahl:
+	ld	de,(loc)
+	dec	d
+	ld	(loc),de
+	call	zahl1
+	ld	a,b
+	call	chr
+decwo:
+	ld	de,1000
+	call	digi
+	ld	de,100
+	call	digi
+	ld	de,10
+	call	digi
+	ld	de,1
+digi:
+	ld	b,48
+dig0:
+	push	hl
+	and	a
+	sbc	hl,de
+	pop	hl
+	jr	c,dig1
+	inc	b
+	and	a
+	sbc	hl,de
+	jr	dig0
+dig1:
+	ld	a,b
+	jp	chr
+zahl1:
+	ld	b,32
+	ld	a,h
+	or	l
+	ret	z
+	ld	a,h
+	ld	b,"+"
+	cp	#80
+	ret	c
+	and	a
+	ex	de,hl
+	ld	hl,0
+	sbc	hl,de
+	ld	a,h
+	and	#7f
+	ld	h,a
+	ld	b,"-"
+	ret
+bild:
+	ld	(einsp),hl
+	ld	hl,#209
+	ld	(loc),hl
+	ld	c,4
+bil0:
+	ld	hl,(loc)
+	ld	l,9
+	ld	(loc),hl
+	ld	b,8
+bil1:
+	ld	hl,(loc)
+	push	hl
+	push	bc
+	defb	#cd
+einsp:
+	defw	0
+	pop	bc
+	pop	hl
+	inc	l
+	ld	(loc),hl
+	djnz	bil1
+	ld	hl,(loc)
+	ld	a,h
+	add	a,6
+	ld	h,a
+	ld	(loc),hl
+	dec	c
+	jp	nz,bil0
+	ret
+	;
+	; Arpeggio Editor
+ornam:
+	call	ornin
+	cp	#fc
+	ret	z
+ornl:
+	call	sync
+	call	taste
+	jp	nc,ornl
+	cp	#fc
+	jr	z,oend
+	cp	9
+	call	z,copy2
+	cp	13
+	call	z,ornin
+	cp	#fc
+	jp	z,oend
+	cp	127
+	call	z,delo
+	cp	#8b
+	call	z,fill
+	cp	224
+	call	z,neg1
+	cp	240
+	call	z,oup
+	cp	241
+	call	z,odow
+	cp	242
+	call	z,oleft
+	cp	243
+	call	z,origt
+	ld	b,a
+	cp	244
+	call	z,oinc
+	cp	245
+	call	z,odec
+	ld	a,b
+	call	swi
+	call	noten
+	ld	ix,($af08) ; ixtab!
+	ld	hl,(orna)
+	ld	(ix+ptab),l
+	ld	(ix+ptab+1),h
+	jp	ornl
+oend:
+	ld	ix,($af08) ; ixtab!
+	ld	(ix+ptab+1),0
+	call	taus
+	call	cls
+	jp	cler
+delo:
+	xor	a
+	call	olga
+	jr	odow
+neg1:
+	ld	b,(iy)
+	xor	a
+	sub	b
+	jr	olga
+oinc:
+	ld	a,(iy)
+	ld	b,0
+	cp	48
+	ret	z
+	inc	a
+	jr	olga
+odec:
+	ld	a,(iy)
+	ld	b,0
+	cp	-48
+	ret	z
+	dec	a
+olga:
+	ld	(iy),a
+	ld	hl,(luc)
+	ld	(loc),hl
+	push	af
+	ld	a,22
+	call	chr
+	pop	af
+	call	bye
+	ld	a,22
+	call	chr
+	ld	b,0
+	ret
+fill:
+	ld	a,(zpos)
+	ld	b,a
+	sub	31
+	ret	z
+	ld	a,31
+	sub	b
+	ld	b,a
+	ld	hl,(orna)
+	push	iy
+	push	iy
+	pop	de
+	inc	de
+	push	hl
+fil1:
+	ld	a,(hl)
+	ld	(de),a
+	inc	hl
+	inc	de
+	djnz	fil1
+	pop	iy
+	ld	hl,byt
+	call	bild
+	pop	iy
+	ld	a,(zpos)
+	jp	obar
+copy2:
+	ld	a,(iy)
+	push	af
+	call	odow
+	pop	af
+	ld	(iy),a
+	ld	a,(zpos)
+	jr	obar
+odow:
+	call	oera
+	ld	a,(zpos)
+	inc	a
+	jr	obar
+oup:
+	call	oera
+	ld	a,(zpos)
+	dec	a
+	jr	obar
+oleft:
+	call	oera
+	ld	a,(zpos)
+	sub	8
+	jr	obar
+origt:
+	call	oera
+	ld	a,(zpos)
+	add	a,8
+obar:
+	and	31
+	ld	(zpos),a
+	call	posit
+	ld	(loc),hl
+	ld	(luc),hl
+	ld	iy,(orna)
+	add	iy,de
+	ld	a,22
+	call	chr
+	ld	a,(iy)
+	call	bye
+	ld	a,22
+	jp	chr
+oera:
+	ld	hl,(luc)
+	ld	(loc),hl
+	ld	a,(iy)
+	jp	bye
+ornin:
+	call	cls
+	ld	hl,tx1a
+	call	text
+	ld	hl,(atx)
+	call	text
+	ld	hl,#2309
+	ld	(loc),hl
+	call	hexin
+	cp	#fc
+	ret	z
+	ld	(orn),a
+	push	af
+	call	out
+	pop	af
+	add	a,a
+	ld	d,0
+	ld	e,a
+	ld	hl,orntab
+	add	hl,de
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	ex	de,hl
+	ld	(orna),hl
+	push	hl
+	ld	hl,#209
+	ld	(loc),hl
+	pop	iy
+	ld	hl,byt
+	call	bild
+	xor	a
+	call	obar
+	xor	a
+	ret
+posit:
+	push	bc
+	ld	d,0
+	ld	e,a
+	ld	b,a
+	srl	b
+	srl	b
+	srl	b
+	ld	l,a
+	ld	a,b
+	add	a,a
+	ld	c,a
+	add	a,a
+	add	a,c
+	ld	h,a
+	ld	a,l
+	sub	b
+	sub	h
+	sub	b
+	add	a,9
+	ld	l,a
+	inc	h
+	inc	h
+	pop	bc
+	ret
+hexin:
+	call	maus
+inlop:
+	call	sync
+	call	taste
+	cp	#fc
+	ret	z
+	jr	nc,inlop
+	cp	48
+	jr	c,inlop
+	cp	#3b
+	jr	c,otto
+	res	5,a
+	cp	"A"
+	jr	c,inlop
+	cp	"G"
+	jr	nc,inlop
+	sub	7
+otto:
+	sub	48
+	ret
+hexa:
+	ld	a,h
+	call	hexo
+	ld	a,l
+	jp	hexo
+clg:
+	ld	a,(wich)
+	or	a
+	jr	nz,clsb
+clsa:
+	ld	hl,#c284+#3000
+	jr	cls2
+clsb:
+	ld	hl,#c2ac+#3000
+cls2:
+	xor	a
+	ld	c,33
+cls3:
+	ld	b,32
+	push	hl
+cls4:
+	ld	(hl),a
+	inc	hl
+	djnz	cls4
+	pop	hl
+	call	next
+	dec	c
+	jr	nz,cls3
+	ret
+next:
+	ld	de,#800
+	add	hl,de
+	ret	nc
+	ld	de,#c050
+	add	hl,de
+	ret
+prev:
+	ld	de,-#800
+	add	hl,de
+	ld	a,h
+	cp	#c0
+	ret	nc
+	ld	de,-#c050
+	add	hl,de
+	ret
+sign:
+	defb	0
+wich:
+	defb	0
+xpos:
+	defb	0
+ypos:
+	defb	0
+zpos:
+	defb	0
+ins:
+	defb	0
+orn:
+	defb	0
+repe:
+	defw	0
+repl:
+	defw	0
+luc:
+	defw	0
+ent:
+	defw	0
+epos:
+	defw	0
+orna:
+	defw	0
+	; Pointers to ENV's + SCR'ADR'
+env:
+	defw	0
+	defw	#f3c4
+	defw	#c284
+enn:
+	defw	0
+	defw	#f3ec
+	defw	#c2ac
+adr:
+	defw	0
+klik:
+	defw	#f3c4
+curs:
+	defw	#c284
+	;
+tx1:
+	defb	10,1,16
+defm	"Instrument: "
+	defb	0
+tx11:
+	defb	10,16,16
+defm	"Repeat:    RepLen:   (  )"
+	defb	0
+tx1a:
+	defb	10,25,9
+defm	"Arpeggio:"
+	defb	0
+	defw	-1

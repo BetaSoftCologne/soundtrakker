@@ -1,0 +1,1599 @@
+	;Other options+
+	;Songlist Editor+
+	;Setup Routine+
+	;File erasing Routine
+anz:
+	equ	14
+font:
+	equ	#d00
+hadr:
+	equ	#12c0
+instab:
+	equ	#4000
+ornta:
+	equ	#4060
+snam:
+	equ	#4b10
+inams:
+	equ	#4b18
+patts:
+	equ	#4ad0
+higt:
+	equ	#4ba0
+sped:
+	equ	#4bfb
+loot:
+	equ	#4bfc
+leng:
+	equ	#4bfd
+heig:
+	equ	#4bfe
+panz:
+	equ	#4bff
+cls:
+	equ	#8003
+decz:
+	equ	#8006
+derr:
+	equ	#800c
+rjp:
+	equ	#8010
+loc:
+	equ	#9000
+chr:
+	equ	#9005
+text:
+	equ	#9008
+maus:
+	equ	#900b
+hex:
+	equ	#900e
+out:
+	equ	#9011
+noten:
+	equ	#9014
+cler:
+	equ	#9017
+taus:
+	equ	#901a
+sync:
+	equ	#901d
+swi:
+	equ	#9020
+wahl:
+	equ	#9023
+chos:
+	equ	#9026
+init:
+	equ	#9029
+stasi:
+	equ	#902c
+prins:
+	equ	#902f
+ddr:
+	equ	#9032
+pnam:
+	equ	#9035
+jupp:
+	equ	#9038
+sure:
+	equ	#903b
+maxi:
+	equ	#903e
+waitk:
+	equ	#bb18
+kbd:
+	equ	#bb1b
+atab:
+	equ	#bef0
+heli:
+	equ	#c280
+	;
+	;ent	#9002
+	org	#2400
+	jp	anal
+	jp	oth
+	jp	clg
+	jp	nam
+	jp	pedit
+	jp	setup
+	jp	font1
+	jp	eras
+	jp	help
+	jp	lset
+	;Ab #241e Textzeiger
+	defw	ented
+	defw	arped
+	defw	envne
+oth:
+	call	taus
+	ld	hl,top+1
+	ld	b,8
+topl:
+	push	bc
+	ld	d,(hl)
+	inc	hl
+	ld	e,(hl)
+	inc	hl
+	ld	(loc),de
+	ld	a,32
+	call	chr
+	ld	b,(hl)
+	inc	hl
+	call	nam1
+	ld	a,32
+	call	chr
+	inc	hl
+	inc	hl
+	pop	bc
+	djnz	topl
+	call	cls
+	ld	hl,(block)
+	ld	de,top
+	ld	(hl),e
+	inc	hl
+	ld	(hl),d
+	xor	a
+	call	init
+dlop:
+	call	sync
+	call	kbd
+	cp	#fc
+	jr	z,die
+	call	wahl
+	call	z,chos
+	jr	dlop
+die:
+	ld	hl,(block)
+	ld	de,(menu)
+	ld	(hl),e
+	inc	hl
+	ld	(hl),d
+	ld	hl,#501
+	ld	(loc),hl
+	ld	hl,(mess1)
+	call	text
+	call	cls
+	ld	a,8
+	call	init
+	jp	cler
+sname:
+	ld	hl,tuff
+	call	text
+	call	namin
+	cp	#fc
+	jp	z,cls
+	ld	hl,name
+	ld	de,snam
+	ld	bc,8
+	ldir
+	call	pnam
+	jp	cls
+iname:
+	call	insin
+	cp	#fc
+	jp	z,cls
+	ld	(ins),a
+	call	namin
+	cp	#fc
+	jp	z,cls
+	ld	a,(ins)
+	ld	h,0
+	ld	l,a
+	add	hl,hl
+	add	hl,hl
+	add	hl,hl
+	ld	de,inams
+	add	hl,de
+	ex	de,hl
+	ld	hl,name
+	ld	bc,8
+	ldir
+warte:
+	ld	hl,pres
+	call	text
+	call	cler
+	call	waitk
+	jp	cls
+copi:
+	call	insin
+	cp	#fc
+	jp	z,cls
+	ld	(ins),a
+	call	desti
+	cp	#fc
+	jp	z,cls
+	ld	(ins1),a
+	ld	b,a
+	ld	a,(ins)
+	cp	b
+	jp	z,cls
+	call	rech
+	push	hl
+	pop	ix
+	ld	a,(ins1)
+	call	rech
+	push	hl
+	pop	iy
+	ld	l,(ix+2)
+	ld	h,(ix+3)
+	ld	e,(iy+2)
+	ld	d,(iy+3)
+	ld	bc,130
+	ldir
+	jp	warte
+clri:
+	call	insin
+	cp	#fc
+	jp	z,cls
+	call	rech
+	ld	b,130
+	inc	hl
+	inc	hl
+	call	clir
+	jp	warte
+clir:
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	inc	hl
+	ex	de,hl
+clix:
+	ld	(hl),0
+	inc	hl
+	djnz	clix
+	ret
+copo:
+	call	ornin
+	cp	#fc
+	jp	z,cls
+	ld	(ins),a
+	call	desti
+	cp	#fc
+	jp	z,cls
+	ld	(ins1),a
+	ld	b,a
+	ld	a,(ins)
+	cp	b
+	jp	z,cls
+	ld	a,(ins)
+	call	rech1
+	push	hl
+	ld	a,(ins1)
+	call	rech1
+	ex	de,hl
+	pop	hl
+	ld	bc,32
+	ldir
+	jp	warte
+clro:
+	call	ornin
+	cp	#fc
+	jp	z,cls
+	call	rech1
+	ld	b,32
+	call	clix
+	jp	warte
+desti:
+	ld	hl,copt
+	jr	input
+insin:
+	ld	hl,meld1
+	jr	input
+ornin:
+	ld	hl,meld2
+input:
+	call	text
+	call	maus
+inlop:
+	call	sync
+	call	kbd
+	cp	#fc
+	ret	z
+	jr	nc,inlop
+	cp	48
+	jr	c,inlop
+	cp	#3b
+	jr	c,otto
+	res	5,a
+	cp	"A"
+	jr	c,inlop
+	cp	"G"
+	jr	nc,inlop
+	sub	7
+otto:
+	sub	48
+	push	af
+	call	out
+	pop	af
+	ret
+namin:
+	ld	hl,namt
+	call	text
+	call	maus
+	ld	b,8
+	ld	ix,name
+nam:
+	ld	a,b
+	ld	(del+2),a
+	call	nclr
+namlo:
+	push	bc
+	call	kbd
+	pop	bc
+	jr	nc,namlo
+	cp	#fc
+	ret	z
+	cp	13
+	jr	z,nend
+	cp	127
+	call	z,del
+	cp	45
+	jr	z,wix
+	cp	46
+	jr	z,wix
+	cp	"0"
+	jr	c,namlo
+	cp	#3a
+	jr	c,wix
+	res	5,a
+	cp	"A"
+	jr	c,namlo
+	cp	"Z"+1
+	jr	nc,namlo
+wix:
+	ld	c,a
+	ld	a,b
+	or	a
+	jr	z,namlo
+	ld	a,c
+	ld	(ix),a
+	inc	ix
+	push	bc
+	call	chr
+	call	maus
+	pop	bc
+	dec	b
+	jp	namlo
+nend:
+	ld	a,32
+	call	chr
+	ret
+del:
+	ld	a,b
+	cp	8
+	jr	z,nodel
+	inc	b
+	dec	ix
+	ld	a,32
+	ld	(ix),a
+	push	bc
+	ld	hl,(loc)
+	dec	h
+	ld	(loc),hl
+	call	chr
+	ld	a,32
+	call	chr
+	ld	hl,(loc)
+	dec	h
+	dec	h
+	ld	(loc),hl
+	call	maus
+	pop	bc
+nodel:
+	xor	a
+	ret
+nclr:
+	push	ix
+	push	bc
+ncl1:
+	ld	(ix),32
+	inc	ix
+	djnz	ncl1
+	pop	bc
+	pop	ix
+	ret
+about:
+	ld	hl,atex
+	call	text
+	call	cler
+	call	waitk
+	jp	cls
+quit:
+	ld	hl,qtex
+	call	text
+	ld	hl,#10c
+	call	sure
+	jp	nz,cls
+	di
+	ld	bc,#7f89
+	out	(c),c
+	rst	0
+rech:
+	add	a,a
+	ld	b,a
+	add	a,a
+	add	a,b
+	ld	d,0
+	ld	e,a
+	ld	hl,instab
+	add	hl,de
+	ret
+rech1:
+	add	a,a
+	ld	d,0
+	ld	e,a
+	ld	hl,ornta
+	add	hl,de
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	ex	de,hl
+	ret
+nam1:
+	ld	a,(hl)
+	push	hl
+	call	chr
+	pop	hl
+	inc	hl
+	djnz	nam1
+	ret
+anal:
+
+	ld	ix,(#b000)
+	call	getvol
+	ld	ix,(#b002)
+	call	getvol
+	ld	ix,(#b004)
+	call	getvol
+	call	clg
+	ld	hl,#fa21
+	ld	de,atab+1
+	ld	b,anz
+	call	loop
+	ld	hl,atab
+	ld	b,15
+decl:
+	ld	a,(hl)
+	or	a
+	jr	z,nodec
+	dec	(hl)
+nodec:
+	inc	hl
+	djnz	decl
+	ret
+getvol:
+	ld	e,(ix)
+	ld	d,(ix+1)
+	ld	a,(ix+9)
+	push	af
+	ld	bc,0
+	call	ana1
+	ld	hl,atab
+	ld	b,0
+	add	hl,bc
+	pop	bc
+	ld	a,(hl)
+	cp	b
+	ret	nc
+	ld	(hl),b
+	ret
+ana1:
+	ld	ix,tonta
+	ld	b,anz
+anap:
+	ld	l,(ix)
+	ld	h,(ix+1)
+	and	a
+	sbc	hl,de
+	ret	z
+	ret	c
+	inc	ix
+	inc	ix
+	inc	c
+	djnz	anap
+	ret
+loop:
+	ld	a,(de)
+	or	a
+	jr	z,kiff
+	push	bc
+	push	de
+	push	hl
+	ld	de,-#800
+	ld	bc,-#c050
+loop2:
+	ld	(hl),1
+	add	hl,de
+	bit	6,h
+	jr	nz,pyrk
+	add	hl,bc
+pyrk:
+	dec	a
+	jr	nz,loop2
+	pop	hl
+	pop	de
+	pop	bc
+kiff:
+	inc	hl
+	inc	de
+	djnz	loop
+	ret
+clg:
+	di
+	ld	(sta),sp
+	ld	hl,#c9d2+14
+	ld	de,#f0f
+	ld	bc,#800
+	ld	a,15
+clg1:
+	ld	sp,hl
+	push	de
+	push	de
+	push	de
+	push	de
+	push	de
+	push	de
+	push	de
+	push	de
+	add	hl,bc
+	jr	nc,dea
+	ld	bc,#c050
+	add	hl,bc
+	ld	bc,#800
+dea:
+	dec	a
+	jr	nz,clg1
+	defb	#31
+sta:
+	defw	0
+	ei
+	ret
+setup:
+	call	cls
+	ld	a,(maxp)
+	ld	(oldm),a
+	ld	hl,tex1
+	call	text
+	call	trans
+	ld	hl,tex2
+	call	text
+	call	plen
+	ld	hl,tex3
+	call	text
+	call	pal
+setl:
+	call	kbd
+	jr	nc,setl
+	cp	#fc
+	jr	z,setx
+	cp	#87
+	call	z,decr
+	cp	#88
+	call	z,incr
+	cp	#84
+	call	z,subl
+	cp	#85
+	call	z,incl
+	cp	#81
+	call	z,pdn
+	cp	#82
+	call	z,pup
+	jr	setl
+setx:
+	ld	a,(maxp)
+	ld	hl,oldm
+	cp	(hl)
+	call	nz,korr
+	ld	a,(leng)
+	ret
+	;
+trans:
+	ld	a,(heig)
+	jr	tout
+incr:
+	ld	a,(heig)
+	cp	12
+	jr	z,ente
+	inc	a
+	jr	tout
+decr:
+
+	ld	a,(heig)
+	cp	-12
+	jr	z,ente
+	dec	a
+tout:
+
+	ld	(heig),a
+	ld	b,"+"
+	cp	128
+	jr	c,plus
+	ld	b,"-"
+	ld	c,a
+	xor	a
+	sub	c
+plus:
+	push	af
+	ld	hl,#c09
+	ld	(loc),hl
+	ld	a,b
+	call	chr
+	pop	af
+	call	decz
+ente:
+	xor	a
+	ret
+	;
+plen:
+	ld	a,(leng)
+	jr	lout
+incl:
+	ld	a,(leng)
+	cp	80
+	ret	z
+	add	a,8
+	jr	lout
+subl:
+	ld	a,(leng)
+	cp	16
+	ret	z
+	sub	8
+lout:
+	push	af
+	ld	hl,#f0b
+	ld	(loc),hl
+	call	decz
+	pop	af
+lou1:
+	ld	(leng),a
+	srl	a
+	srl	a
+	srl	a
+	sub	2
+	ld	d,0
+	ld	e,a
+	ld	hl,pztb
+	add	hl,de
+	ld	a,(hl)
+	ld	(maxp),a
+	ret
+korr:
+	ld	hl,patts
+	ld	b,64
+	ld	a,(maxp)
+	ld	d,a
+korl:
+	ld	a,(hl)
+	cp	d
+	jr	c,koro
+	ld	(hl),0
+koro:
+	inc	hl
+	djnz	korl
+kent:
+	ld	a,(leng)
+	ld	b,a
+	ld	a,(maxp)
+	ld	(max1),a
+	jp	maxi
+lset:
+	ld	a,(leng)
+	call	lou1
+	jr	kent
+	;
+pal:
+	ld	a,(paln)
+	jr	ppal
+pup:
+	ld	a,(paln)
+	cp	6
+	ret	z
+	inc	a
+	jr	ppal
+pdn:
+	ld	a,(paln)
+	or	a
+	ret	z
+	dec	a
+ppal:
+	ld	(paln),a
+	push	af
+	ld	hl,#a0d
+	ld	(loc),hl
+	call	decz
+	pop	af
+	add	a,a
+	add	a,a
+	ld	ix,palt
+	ld	d,0
+	ld	e,a
+	add	ix,de
+	ld	b,(ix)
+	ld	c,b
+	push	bc
+	call	#bc38
+	pop	bc
+	xor	a
+	call	#bc32
+	ld	b,(ix+1)
+	ld	c,b
+	ld	a,1
+	call	#bc32
+	ld	b,(ix+2)
+	ld	c,b
+	ld	a,2
+	call	#bc32
+	ld	b,(ix+3)
+	ld	c,b
+	ld	a,3
+	call	#bc32
+	xor	a
+	ret
+	;
+tx3:
+	ld	b,3
+	ld	a,(hl)
+	call	chr
+	inc	hl
+	djnz	tx3+2
+	ret
+	;
+eras:
+	ld	hl,snam
+	ld	de,kull
+	ld	bc,8
+	ldir
+	call	cls
+	ld	hl,tex4
+	call	text
+	call	maus
+	call	nami
+	jp	cls
+nami:
+	call	cler
+	call	#bb06
+	cp	#fc
+	ret	z
+	res	5,a
+	cp	"S"
+	jr	z,song
+	cp	"E"
+	jr	nz,nami
+	call	chr
+	ld	b,12
+	ld	hl,#10b
+	ld	ix,deln
+	call	innam
+	cp	#fc
+	ret	z
+	ld	a,12
+	sub	b
+	jr	dele
+song:
+	call	chr
+	ld	hl,snam
+	ld	de,deln
+	ld	bc,8
+	ldir
+	ld	hl,ext
+	ld	bc,4
+	ldir
+	ld	a,12
+dele:
+	ld	ix,para
+	ld	(ix),a
+	ld	hl,deln
+	ld	a,(hl)
+	cp	32
+	jp	z,cls
+	ld	(ix+1),l
+	ld	(ix+2),h
+	ld	hl,para
+	ld	ix,#af20
+	ld	(ix),l
+	ld	(ix+1),h
+	ld	hl,#10d
+	call	sure
+	call	z,del1
+	jp	cls
+del1:
+	ld	hl,del1
+	ld	(rjp),hl
+	ld	a,1
+	ld	ix,#af20
+	call	namo
+	rst	#18
+	defw	exec
+	call	nc,derr
+	ret
+namo:
+	push	af
+	ld	hl,meld
+	call	text
+	ld	a,(#a700)
+	add	a,65
+	call	chr
+    ld	a,":"
+	call	chr
+	ld	l,(ix)
+	ld	h,(ix+1)
+	ld	b,(hl)
+	inc	hl
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+naml:
+	ld	a,(de)
+	call	chr
+	inc	de
+	djnz	naml
+	pop	af
+	ret
+	;
+help:
+	ld	hl,(hadr)
+plop:
+	ld	a,(hl)
+	or	a
+	ret	z
+	cp	22
+	jr	nz,char
+	inc	hl
+	ld	a,(hl)
+	ld	(posi),a
+	inc	hl
+	ld	a,(hl)
+	ld	(posi+1),a
+	inc	hl
+	ld	a,(hl)
+char:
+	push	hl
+	sub	32
+	ld	h,0
+	ld	l,a
+	add	hl,hl
+	add	hl,hl
+	add	hl,hl
+	ld	bc,font
+	add	hl,bc
+	ld	de,(posi)
+	ld	b,8
+	ld	c,b
+zeich:
+
+	ld	a,(hl)
+	ld	(de),a
+	ld	a,d
+	add	a,c
+	ld	d,a
+	inc	hl
+	djnz	zeich
+	ld	hl,(posi)
+	inc	hl
+	ld	(posi),hl
+	and	a
+	ld	bc,#c7d0
+	sbc	hl,bc
+	jr	c,next
+	ld	hl,#c000
+	ld	(posi),hl
+next:
+	pop	hl
+	inc	hl
+	jp	plop
+	;
+font1:
+	ld	hl,#1c00
+	ld	de,#200
+	ld	bc,#5ff
+	push	de
+	push	bc
+	ldir
+	pop	de
+	pop	hl
+fonl:
+	ld	a,(hl)
+	rra
+	rra
+	rra
+	rra
+	or	(hl)
+	ld	(hl),a
+	inc	hl
+	dec	de
+	ld	a,d
+	or	e
+	jr	nz,fonl
+	ret
+;Name-Inputroutine:
+
+	;IX=Address of String
+	;HL=X/Y-Location
+	;B=Len.of String
+innam:
+	ld	(loc),hl
+	push	ix
+	push	bc
+	ld	hl,tex5
+	call	text
+	call	maus
+	pop	bc
+	pop	ix
+	jp	nam
+	;
+pedit:
+	pop	hl
+	push	hl
+	inc	hl
+	inc	hl
+	ld	de,ex1
+	ld	bc,12
+	ldir
+	call	cls
+	ld	hl,tex
+	call	text
+	xor	a
+	ld	(pos),a
+	ld	(line),a
+	ld	hl,patts
+	call	bild
+	ld	hl,patts
+	ld	(adr1),hl
+	ld	hl,higt
+	ld	(adr2),hl
+	ld	hl,0
+	ld	(xpos),hl
+	call	printe
+lop:
+	call	kbd
+	jr	nc,lop
+	cp	#fc
+	jr	z,pend
+	cp	13
+	call	z,send
+	cp	127
+	call	z,null
+	cp	#88
+	call	z,inc1
+	cp	#87
+	call	z,dec1
+	cp	#85
+	call	z,inc2
+	cp	#84
+	call	z,dec2
+	cp	#82
+	call	z,inc3
+	cp	#81
+	call	z,dec3
+	cp	240
+	call	z,up
+	cp	241
+	call	z,down
+	cp	242
+	call	z,left
+	cp	243
+	call	z,rigt
+	cp	244
+	call	z,adde
+	cp	245
+	call	z,sube
+	cp	246
+	call	z,delp
+	cp	247
+	call	z,insp
+	jr	lop
+pend:
+	ld	hl,(patn)
+	ld	a,(hl)
+	call	jupp
+	jp	help
+left:
+	ld	a,(xpos)
+	or	a
+	ret	z
+	call	era
+	ld	a,(xpos)
+	ld	b,a
+	dec	a
+	ld	(xpos),a
+	ld	a,b
+	and	1
+	jr	nz,grad
+	ld	hl,pos
+	dec	(hl)
+	ld	hl,(adr2)
+	dec	hl
+	ld	(adr2),hl
+	jp	printe
+grad:
+	ld	hl,(adr1)
+	dec	hl
+	ld	(adr1),hl
+	jp	printe
+rigt:
+	ld	a,(xpos)
+	cp	7
+	ret	z
+	call	era
+	ld	a,(xpos)
+	ld	b,a
+	inc	a
+	ld	(xpos),a
+	ld	a,b
+	and	1
+	jr	z,even
+	ld	hl,pos
+	inc	(hl)
+	ld	hl,(adr2)
+	inc	hl
+	ld	(adr2),hl
+	jp	printe
+even:
+	ld	hl,(adr1)
+	inc	hl
+	ld	(adr1),hl
+	jp	printe
+up:
+	ld	a,(line)
+	or	a
+	ret	z
+	ld	hl,line
+	dec	(hl)
+	cp	8
+	jr	z,page0
+	call	era
+	ld	a,(pos)
+	sub	4
+	ld	(pos),a
+	ld	a,(ypos)
+	dec	a
+	ld	(ypos),a
+up1:
+	ld	de,-4
+	jr	zeil
+page0:
+	ld	hl,patts
+	xor	a
+	call	bild
+	ld	a,7
+	ld	(ypos),a
+	ld	a,(pos)
+	sub	4
+	ld	(pos),a
+	jr	up1
+down:
+	ld	a,(line)
+	cp	15
+	ret	z
+	ld	hl,line
+	inc	(hl)
+	cp	7
+	jr	z,page1
+	call	era
+	ld	a,(pos)
+	add	a,4
+	ld	(pos),a
+	ld	a,(ypos)
+	inc	a
+	ld	(ypos),a
+dow1:
+	ld	de,4
+zeil:
+	ld	hl,(adr1)
+	add	hl,de
+	ld	(adr1),hl
+	ld	hl,(adr2)
+	add	hl,de
+	ld	(adr2),hl
+	jp	printe
+page1:
+	ld	hl,patts+32
+	ld	a,8
+	call	bild
+	xor	a
+	ld	(ypos),a
+	ld	a,(pos)
+	add	a,4
+	ld	(pos),a
+	jr	dow1
+adde:
+	call	geta
+	jr	nz,add0
+	ld	a,(hl)
+	inc	a
+	defb	#fe
+max1:
+	defb	23
+	ret	z
+	inc	(hl)
+	jp	printe
+add0:
+	ld	a,(hl)
+	cp	7
+	ret	z
+	inc	(hl)
+	jp	printe
+sube:
+	call	geta
+	jr	nz,sub0
+	ld	a,(hl)
+	or	a
+	ret	z
+	dec	(hl)
+	jp	printe
+sub0:
+	ld	a,(hl)
+	cp	-8
+	ret	z
+	dec	(hl)
+	jp	printe
+null:
+	call	geta
+	ld	(hl),0
+	jp	printe
+geta:
+	ld	hl,(adr1)
+	ld	a,(xpos)
+	and	1
+	ret	z
+	ld	hl,(adr2)
+	ret
+era:
+	call	getp
+	ld	hl,(adr1)
+	ld	de,dezi
+	ld	a,(xpos)
+	and	1
+	jr	z,patt
+	ld	hl,(adr2)
+	ld	de,hexo
+patt:
+	ld	a,(hl)
+	push	de
+	ret
+printe:
+	call	getp
+	ld	hl,(adr1)
+	ld	de,dezi
+	ld	a,(xpos)
+	and	1
+	jr	z,puff
+	ld	hl,(adr2)
+	ld	de,hexo
+puff:
+	ld	a,22
+	call	chr
+	call	patt
+	ld	a,22
+	call	chr
+	ld	a,(pos)
+	ld	hl,(ex1)
+	call	gohl
+	ret
+delp:
+	call	getx
+	ret	z
+	ld	a,(pos)
+	ld	d,0
+	ld	e,a
+	ld	ix,patts
+	add	ix,de
+	ld	a,b
+	call	ins2
+	ld	ix,higt
+	add	ix,de
+	ld	b,a
+	call	ins2
+	jr	fluk
+insp:
+	call	getx
+	ret	z
+	ld	ix,patts+63
+	ld	a,b
+	call	ins0
+	ld	ix,higt+63
+	ld	b,a
+	call	ins0
+fluk:
+	ld	hl,patts
+	ld	b,0
+	ld	a,(line)
+	cp	8
+	jr	c,flak
+	ld	hl,patts+32
+	ld	b,8
+flak:
+	ld	a,b
+	call	bild
+	jp	printe
+ins0:
+	ld	c,(ix-1)
+	ld	(ix),c
+	dec	ix
+	djnz	ins0
+	ld	(ix),b
+	ret
+ins2:
+	ld	c,(ix+1)
+	ld	(ix),c
+	inc	ix
+	djnz	ins2
+	ld	(ix),b
+	ret
+getx:
+	ld	a,(pos)
+	ld	b,a
+	ld	a,64
+	sub	b
+	dec	a
+	ld	b,a
+	ret
+getp:
+	ld	a,(xpos)
+	ld	b,a
+	add	a,a
+	add	a,b
+	add	a,5
+	ld	h,a
+	ld	a,(ypos)
+	add	a,9
+	ld	l,a
+	ld	(loc),hl
+	ret
+bild:
+	push	hl
+	ld	hl,#109
+	ld	(loc),hl
+	pop	hl
+	add	a,a
+	add	a,a
+	ld	b,8
+	ld	de,higt-patts
+lop1:
+	push	af
+	push	bc
+	call	dezi
+    ld	a,":"
+	call	chr
+	ld	a,32
+	call	chr
+	ld	b,4
+lop2:
+	push	bc
+	push	hl
+	ld	a,(hl)
+	call	dezi
+	ld	a,32
+	call	chr
+	add	hl,de
+	ld	a,(hl)
+	call	hexo
+	ld	a,32
+	call	chr
+	pop	hl
+	inc	hl
+	pop	bc
+	djnz	lop2
+	ld	a,13
+	call	chr
+	pop	bc
+	pop	af
+	add	a,4
+	djnz	lop1
+	ret
+hexo:
+	call	sign
+	ld	a,b
+	call	chr
+	ld	a,c
+	jp	chr
+sign:
+	ld	bc,#2030
+	or	a
+	ret	z
+	cp	#80
+	jr	nc,nega
+	ld	b,"+"
+	add	a,"0"
+	ld	c,a
+	ret
+nega:
+	ld	b,"-"
+	ld	c,a
+	xor	a
+	sub	c
+	add	a,"0"
+	ld	c,a
+	ret
+dezi:
+	ld	c,10
+	call	subs
+	ld	c,1
+subs:
+	ld	b,47
+	sub	c
+	inc	b
+	jr	nc,subs+2
+	add	a,c
+	push	af
+	ld	a,b
+	call	chr
+	pop	af
+	ret
+send:
+	ld	a,(pos)
+	inc	a
+	jr	de1
+inc1:
+	ld	a,(panz)
+	cp	64
+	ret	z
+	inc	a
+	jr	de1
+dec1:
+	ld	a,(panz)
+	cp	1
+	ret	z
+	dec	a
+de1:
+	ld	(panz),a
+	ld	hl,(ex2)
+	jr	gohl
+inc2:
+	ld	a,(loot)
+	inc	a
+	ld	hl,panz
+	cp	(hl)
+	ret	z
+	jr	laus
+dec2:
+	ld	a,(loot)
+	dec	a
+	ret	m
+laus:
+	ld	(loot),a
+	ld	hl,(ex3)
+	jr	gohl
+inc3:
+	ld	a,(sped)
+	cp	63
+	ret	z
+	inc	a
+	jr	de3
+dec3:
+	ld	a,(sped)
+	cp	2
+	ret	z
+	dec	a
+de3:
+	ld	(sped),a
+	ld	hl,(ex4)
+gohl:
+	push	hl
+	ret
+	;
+par:
+	nop
+peek:
+	nop
+xpos:
+	nop
+ypos:
+	nop
+line:
+	nop
+ins:
+	nop
+ins1:
+	nop
+maxp:
+	nop
+oldm:
+	nop
+paln:
+	nop
+ex1:
+	defw	0
+ex2:
+	defw	0
+ex3:
+	defw	0
+ex4:
+	defw	0
+pos:
+	defw	0
+patn:
+	defw	0
+luc:
+	defw	0
+adr1:
+	defw	patts
+adr2:
+	defw	higt
+block:
+	equ	#af00
+menu:
+	equ	#af02
+mess1:
+	equ	#af04
+posi:
+	defw	#c000
+para:
+	defs	3
+exec:
+	defb	#8a,#d4,7
+pztb:
+	defb	92,61,46,36,30,26,23,20,18
+deln:
+	defm	"            "
+ext:
+	defm	".SNG"
+name:
+	defs	8
+tonta:
+	defw	2703,1804,1204,804,536,358,239
+	defw	159,106,71,47,32,21,16
+palt:
+	defb	0,26,2,9,0,26,13,6,0,26,8,4
+	defb	0,26,14,5,0,26,5,13,0,26,13,2
+	defb	13,26,1,0
+	;
+tex:
+	defb	10,30,9
+	defm	"f7 length -"
+	defb	10,30,10
+	defm	"f8 length +"
+	defb	10,30,11
+	defm	"f4 loop -"
+	defb	10,30,12
+	defm	"f5 loop +"
+	defb	10,30,13
+	defm	"f1 delay -"
+	defb	10,30,14
+	defm	"f2 delay +"
+	defb	0
+atex:
+	defb	10,1,9
+	defm	"Soundtrakker V1.0 for Amstrad CPC (Plus)"
+	defm	"Programmed and designed by Oliver Mayer"
+	defb	13
+	defm	"Copyright 1992 by New Age Software"
+	defb	10,1,13
+	defm	"Keep the programmers working...."
+	defb	13
+	defm	"....spread the word and not the disc!"
+	defb	10,1,16
+    defm	"Serial: #"
+sern:
+	defm	"000000"
+	defb	0
+pres:
+	defb	10,1,14
+	defm	"Ready.. press any Key."
+	defb	0
+tuff:
+	defb	10,1,9
+	defm	"Change Song Name"
+	defb	0
+meld1:
+	defb	10,1,9
+    defm	"Choose Instrument: "
+	defb	0
+meld2:
+	defb	10,1,9
+    defm	"Choose Arpeggio: "
+	defb	0
+copt:
+	defb	10,1,11
+    defm	"Copy to: "
+	defb	0
+namt:
+	defb	10,1,11
+    defm	"Enter Name: "
+	defb	0
+qtex:
+	defb	10,1,9
+	defm	"Quit Soundtrakker"
+	defb	0
+top:
+	defb	7
+	defb	1,2,9
+	defm	"NAME SONG"
+	defw	sname
+	defb	12,2,8
+	defm	"NAME INS"
+	defw	iname
+	defb	22,2,8
+	defm	"COPY INS"
+	defw	copi
+	defb	32,2,7
+	defm	"CLR INS"
+	defw	clri
+	defb	1,3,9
+	defm	"COPY ARP."
+	defw	copo
+	defb	12,3,8
+	defm	"CLR ARP."
+	defw	clro
+	defb	22,3,8
+	defm	"ABOUT ST"
+	defw	about
+	defb	32,3,7
+	defm	"QUIT ST"
+	defw	quit
+	;
+meld:
+	defb	10,1,15
+	defm	"Erasing "
+	defb	0
+tex1:
+	defb	10,1,9
+    defm	"Transpose:"
+	defb	10,21,9
+	defm	"f7 to dec  f8 to inc"
+	defb	0
+tex2:
+	defb	10,1,11
+    defm	"Pattern len.:"
+	defb	10,21,11
+	defm	"f4 to dec  f5 to inc"
+	defb	0
+tex3:
+	defb	10,1,13
+    defm	"Palette:"
+	defb	10,21,13
+	defm	"f1 to dec  f2 to inc"
+	defb	0
+tex4:
+	defb	10,1,9
+	defm	"[S]ong "
+	defb	34
+kull:
+	defs	8
+	defb	34
+    defm	" or [E]nter Name: "
+	defb	0
+tex5:
+    defm	"Enter Filename: "
+	defb	0
+	;Other Messages
+ented:
+	defb	10,25,11
+	defm	"Arrows move CURS"
+	defb	10,25,12
+    defm	"SHIFT-UP :ADD 1"
+	defb	10,25,13
+    defm	"SHIFT-DN :SUB 1"
+	defb	10,25,14
+    defm	"CTRL-UP  :ADD 16"
+	defb	10,25,15
+    defm	"CTRL-DOWN:SUB 16"
+	defb	10,25,16
+	defm	"DEL to clear"
+	defb	0
+arped:
+	defb	10,25,11
+	defm	"Arrows move CURS"
+	defb	10,25,12
+    defm	"SHIFT-UP : ADD 1"
+	defb	10,25,13
+    defm	"SHIFT-DN : SUB 1"
+	defb	10,25,14
+	defm	"ENTER to select"
+	defb	10,25,15
+	defm	"DEL to clear"
+	defb	0
+envne:
+	defb	10,2,9,36,10,19,9,37,10,22,9,36,10,39,9,37
+	defb	10,2,10,36,10,19,10,37,10,22,10,36,10,39,10,37
+	defb	10,2,11,36,10,19,11,37,10,22,11,36,10,39,11,37
+	defb	10,2,12,36,10,19,12,37,10,22,12,36,10,39,12,37
+	defb	10,2,13,36,10,19,13,37,10,22,13,36,10,39,13,37
+	defb	13
+	defb	32,22
+	defm	"      Volume      "
+	defb	22,32,32,22
+	defm	"      Noise       "
+	defb	22,0
+	end

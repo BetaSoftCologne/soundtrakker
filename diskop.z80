@@ -1,0 +1,1007 @@
+;Diskoperations
+
+fanz:
+		equ	7
+mbase:
+		equ	#2400
+erase:
+	equ	mbase+#15
+setl:
+	equ	mbase+#1b
+buff:
+	equ	#3600
+dbuf:
+	equ	#3800
+instab:
+	equ	#4000
+name:
+	equ	#4b10
+inams:
+	equ	#4b18
+patts:
+	equ	#4ad0
+goto:
+	equ	#4bfc
+plen:
+	equ	#4bfd
+leng:
+	equ	#4bff
+loc:
+	equ	#9000
+chr:
+	equ	#9005
+text:
+	equ	#9008
+maus:
+	equ	#900b
+hexo:
+	equ	#900e
+out:
+	equ	#9011
+noten:
+	equ	#9014
+cler:
+	equ	#9017
+taus:
+	equ	#901a
+sync:
+	equ	#901d
+swi:
+	equ	#9020
+wahl:
+	equ	#9023
+chos:
+	equ	#9026
+init:
+	equ	#9029
+stasi:
+	equ	#902c
+prins:
+	equ	#902f
+ddr:
+	equ	#9032
+driv:
+	equ	#a700
+block:
+	equ	#af00
+menu:
+	equ	#af02
+mess1:
+	equ	#af04
+ink:
+	equ	#af06
+taste:
+	equ	#bb1b
+	;ent	#9002
+	org	#8000
+	jp	disk
+	jp	cls
+	jp	dec1
+	jp	jeck
+	jp	derr
+	nop
+rjp:
+	defw	0
+disk:
+	call	taus
+	call	sync
+	call	ink2
+	ld	hl,mess2
+	call	text
+	call	drout
+	call	stat
+	ld	hl,disko
+	call	jeck
+	call	cls
+	ld	hl,#bf00
+	call	#bcdd
+	ld	hl,(block)
+	ld	de,disko
+	ld	(hl),e
+	inc	hl
+	ld	(hl),d
+	xor	a
+	call	init
+dlop:
+	call	taste
+	jr	nc,dlop
+	cp	#fc
+	jr	z,die
+	call	wahl
+	call	z,chos
+	jr	dlop
+die:
+	ld	hl,#501
+	ld	(loc),hl
+	ld	hl,#bf00
+	call	#bcda
+	ld	hl,(block)
+	ld	de,(menu)
+	ld	(hl),e
+	inc	hl
+	ld	(hl),d
+	ld	hl,(mess1)
+	call	text
+	call	cls
+	xor	a
+	jp	init
+cat:
+	call	dir
+	ld	hl,buff
+	ld	ix,sngs
+	call	find
+	ld	(indir),hl
+	ld	ix,inss
+	call	find
+	ld	b,178
+	ld	a,(#be51)
+	and	#c0
+	cp	#c0
+	jr	z,dat
+	ld	b,169
+dat:
+	ld	a,b
+	ld	de,14
+	ld	ix,dbuf
+gfre:
+	sub	(ix+12)
+	add	ix,de
+	bit	7,(ix)
+	jr	nz,gfre
+	ld	(free),a
+stat:
+	ld	hl,#b01
+	ld	(loc),hl
+	call	ink2
+	ld	a,(sngs+3)
+	call	dec1
+	ld	hl,#1501
+	ld	(loc),hl
+	ld	a,(inss+3)
+	call	dec1
+	ld	hl,#2001
+	ld	(loc),hl
+	ld	a,(free)
+	call	decz
+	jp	ink1
+dir:
+	ld	hl,dir
+	ld	(rjp),hl
+	ld	de,dbuf
+	call	#bc9b
+	call	nc,derr
+	ret
+find:
+	ld	(ix+3),0
+	ld	iy,dbuf
+file:
+	ld	a,(iy)
+	cp	#ff
+	ret	nz
+	call	filt
+	jr	file
+filt:
+	inc	iy
+	ld	(hl),0
+	ld	a,(iy+8)
+	cp	(ix)
+	jr	nz,nona
+	ld	a,(iy+9)
+	cp	(ix+1)
+	jr	nz,nona
+	ld	a,(iy+10)
+	cp	(ix+2)
+	jr	nz,nona
+	ld	b,8
+naml:
+	ld	a,(iy)
+	ld	(hl),a
+	inc	hl
+	inc	iy
+	djnz	naml
+	inc	(ix+3)
+	ld	de,5
+	add	iy,de
+	ret
+nona:
+	ld	de,13
+	add	iy,de
+	ret
+derr:
+	ret	c
+	ret	nz
+	pop	hl
+	set	7,a
+	ld	(errn),a
+	call	#bc7a
+	call	#bc8f
+delp:
+	call	cls
+	ld	hl,#010b
+	ld	(loc),hl
+	ld	a,(driv)
+	add	a,65
+	ld	(dise+6),a
+	ld	hl,dise
+	call	text
+	ld	a,(errn)
+	call	ferr
+	ld	hl,dert
+	call	text
+	call	maus
+erpl:
+	call	#bb06
+	res	5,a
+	cp	"C"
+	jp	z,cls
+	cp	"R"
+	jr	nz,erpl
+retr:
+	call	cls
+	ld	hl,(rjp)
+	jp	(hl)
+ferr:
+	ld	hl,ertab
+	ld	b,fanz
+fer1:
+	cp	(hl)
+	jr	z,erfnd
+	inc	hl
+	inc	hl
+	inc	hl
+	djnz	fer1
+	ld	hl,der0
+	jp	text
+erfnd:
+	inc	hl
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	ex	de,hl
+	jp	text
+loads:
+	ld	ix,sngs
+	ld	a,(ix+3)
+	or	a
+	ret	z
+	call	cls
+	ld	hl,#209
+	ld	(loc),hl
+	ld	hl,buff
+	call	ausga
+	call	wahle
+	call	cls
+	ld	hl,(fnad)
+	ld	a,h
+	or	l
+	ret	z
+	ld	de,fname
+	ld	bc,8
+	ldir
+	call	readf
+	ret
+readf:
+	ld	hl,readf
+	ld	(rjp),hl
+	ld	b,12
+	ld	hl,fname
+	call	#bc77
+	call	nc,derr
+	ld	a,177
+	and	a
+	ld	hl,(#a777)
+	ld	de,#5453
+	sbc	hl,de
+	call	nz,derr+2
+	ld	hl,#4080
+	call	#bc83
+	call	nc,derr
+	call	#bc7a
+	call	nc,derr
+	ld	hl,(#a76d)
+	ld	de,#4080
+	add	hl,de
+clil:
+	ld	(hl),0
+	inc	hl
+	ld	a,h
+	cp	#80
+	jr	nz,clil
+	call	setl
+	ld	hl,#1506
+	ld	(loc),hl
+	ld	a,(goto)
+	call	dec1
+	ld	a,(leng)
+	call	ddr
+	xor	a
+	call	stasi
+	xor	a
+	jp	prins
+saves:
+	ld	a,(leng)
+	ld	b,a
+	xor	a
+	ld	hl,patts
+klein:
+	ld	c,(hl)
+	cp	c
+	jr	nc,nokle
+	ld	a,c
+nokle:
+	inc	hl
+	djnz	klein
+	push	af
+	ld	a,(plen)
+	ld	h,0
+	ld	l,a
+	ld	d,h
+	ld	e,l
+	add	hl,hl
+	add	hl,hl
+	add	hl,hl
+	add	hl,de
+	pop	af
+	inc	a
+	ex	de,hl
+	ld	hl,0
+adlo:
+	add	hl,de
+	dec	a
+	jr	nz,adlo
+	ld	de,#c00-128
+	add	hl,de
+	ld	(filen),hl
+	ld	hl,name
+	call	bad
+	ld	de,fname
+	ld	bc,8
+	ldir
+	call	writ
+	jp	cls
+writ:
+	ld	hl,writ
+	ld	(rjp),hl
+	ld	hl,fname
+	call	jupp
+	ld	b,12
+	ld	hl,fname
+	call	#bc8c
+	call	nc,derr
+	ld	hl,#5453
+	ld	(#a7c1),hl
+	ld	a,2
+	ld	hl,#4080
+	ld	de,(filen)
+	ld	bc,0
+	call	#bc98
+	call	nc,derr
+	call	#bc8f
+	call	nc,derr
+	jp	cat
+loadi:
+	ld	ix,inss
+	ld	a,(ix+3)
+	or	a
+	ret	z
+	call	cls
+	ld	hl,#209
+	ld	(loc),hl
+	ld	hl,(indir)
+	call	ausga
+	call	wahle
+	call	cls
+	ld	hl,(fnad)
+	ld	a,h
+	or	l
+	ret	z
+	ld	de,iname
+	ld	bc,8
+	ldir
+	call	readi
+	jp	cls
+readi:
+	ld	hl,readi
+	ld	(rjp),hl
+	ld	b,12
+	ld	hl,iname
+	call	#bc77
+	call	nc,derr
+	ld	a,177
+	and	a
+	ld	hl,(#a777)
+	ld	de,#5453
+	sbc	hl,de
+	call	nz,derr+2
+	ld	hl,dbuf
+	call	#bc83
+	call	nc,derr
+	call	#bc7a
+	call	nc,derr
+	call	insin
+	cp	#fc
+	jp	z,cls
+	ld	hl,dbuf
+	ld	de,(adin)
+	ld	bc,130
+	ldir
+	ld	a,(ins)
+	call	getna
+	ex	de,hl
+	ld	hl,iname
+	ld	bc,8
+	ldir
+	ld	hl,meld3
+	call	text
+	ld	a,(ins)
+	call	out
+	ld	hl,meld9
+	call	text
+	ld	hl,iname
+	call	namp
+wait:
+	ld	hl,pres
+	call	text
+	call	cler
+	jp	#bb06
+savei:
+	call	cls
+	call	insin
+	cp	#fc
+	jp	z,cls
+	call	getna
+	call	bad
+	ld	de,iname
+	ld	bc,8
+	ldir
+	ld	hl,(adin)
+	ld	de,dbuf
+	ld	bc,130
+	ldir
+	call	writi
+	jp	cls
+	;get adr. of name in HL
+getna:
+	add	a,a
+	add	a,a
+	add	a,a
+	ld	d,0
+	ld	e,a
+	ld	hl,inams
+	add	hl,de
+	ret
+writi:
+	ld	hl,writi
+	ld	(rjp),hl
+	ld	hl,iname
+	call	jupp
+	ld	b,12
+	ld	hl,iname
+	call	#bc8c
+	call	nc,derr
+	ld	hl,#5453
+	ld	(#a7c1),hl
+	ld	a,2
+	ld	hl,dbuf
+	ld	de,130
+	ld	bc,0
+	call	#bc98
+	call	nc,derr
+	call	#bc8f
+	call	nc,derr
+	ret
+jupp:
+	push	hl
+	ld	hl,meld1
+	call	text
+	pop	hl
+	jp	filna
+dria:
+	xor	a
+	ld	(driv),a
+	jr	drout
+drib:
+	ld	a,1
+	ld	(driv),a
+	jr	drout
+drout:
+	ld	hl,#701
+	ld	(loc),hl
+	call	ink2
+	ld	a,(driv)
+	add	a,65
+	call	chr
+	jp	ink1
+	;
+bad:
+	ld	a,(hl)
+	cp	"-"
+	ret	z
+	jr	c,bad1
+	cp	91
+	jr	nc,bad1
+	cp	65
+	ret	nc
+	cp	58
+	jr	nc,bad1
+	cp	48
+	ret	nc
+bad1:
+	ld	hl,#10c
+	ld	(loc),hl
+	ld	hl,der8
+	call	text
+	call	wait
+	pop	hl
+	jp	cls
+	;
+insin:
+	ld	hl,meld2
+	call	text
+	call	maus
+	xor	a
+	ld	(ins),a
+inlop:
+	call	sync
+	call	taste
+	cp	#fc
+	ret	z
+	jr	nc,inlop
+	cp	48
+	jr	c,inlop
+	cp	#3b
+	jr	c,otto
+	res	5,a
+	cp	"A"
+	jr	c,inlop
+	cp	"G"
+	jr	nc,inlop
+	sub	7
+otto:
+	sub	48
+	push	af
+	push	af
+	call	out
+	pop	af
+	add	a,a
+	ld	b,a
+	add	a,a
+	add	a,b
+	ld	d,0
+	ld	e,a
+	ld	hl,instab
+	add	hl,de
+	inc	hl
+	inc	hl
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	ld	(adin),de
+	pop	af
+	ld	(ins),a
+	ret
+	;
+ausga:
+	xor	a
+	ld	(max1),a
+	ld	(max2),a
+	ld	(panz),a
+	ld	(pust),a
+	ld	(walt),hl
+	ld	a,(ix+3)
+	ld	b,a
+	dec	a
+	ld	(max),a
+	cp	32
+	call	nc,page
+iif:
+	push	bc
+	call	namp
+	push	hl
+	ld	hl,(loc)
+	inc	h
+	inc	h
+	ld	a,h
+	cp	41
+	jr	c,yyy
+	ld	h,2
+	inc	l
+	ld	a,l
+	cp	25
+	jr	c,yyy
+	ld	hl,#101
+yyy:
+	ld	(loc),hl
+	pop	hl
+	pop	bc
+	djnz	iif
+	ret
+page:
+	sub	32
+	ld	(max2),a
+	ld	a,1
+	ld	(panz),a
+	ld	a,31
+	ld	(max),a
+	ld	(max1),a
+	ld	b,32
+	ret
+wahle:
+	xor	a
+	call	mal1
+	ld	hl,0
+	ld	(fnad),hl
+wahll:
+	call	taste
+	jr	nc,wahll
+	cp	#fc
+	jp	z,cls
+	cp	9
+	call	z,swit
+	cp	13
+	jp	z,take
+	cp	32
+	jp	z,take
+	cp	240
+	call	z,wup
+	cp	241
+	call	z,wdo
+	cp	242
+	call	z,wlt
+	cp	243
+	call	z,wrt
+	jr	wahll
+wlt:
+	ld	a,(xpos)
+	sub	1
+	jr	nc,male
+	ld	a,(max)
+	jr	male
+wrt:
+	ld	a,(max)
+	ld	b,a
+	ld	a,(xpos)
+	inc	a
+	cp	b
+	jr	z,male
+	jr	c,male
+	xor	a
+	jr	male
+wdo:
+	ld	a,(max)
+	ld	b,a
+	ld	a,(xpos)
+	add	a,4
+	cp	b
+	jr	z,male
+	jr	c,male
+	ret
+wup:
+	ld	a,(xpos)
+	cp	4
+	ret	c
+	sub	4
+male:
+	push	af
+	call	eras
+	pop	af
+mal1:
+	ld	(xpos),a
+	ld	d,0
+	ld	e,a
+	push	de
+	push	af
+	and	3
+	add	a,a
+	ld	b,a
+	add	a,a
+	add	a,a
+	add	a,b
+	inc	a
+	ld	h,a
+	pop	af
+	and	a
+	srl	a
+	srl	a
+	add	a,9
+	ld	l,a
+	ld	(loc),hl
+	ld	(luc),hl
+	pop	hl
+	add	hl,hl
+	add	hl,hl
+	add	hl,hl
+	ld	de,(walt)
+	add	hl,de
+	ld	(nadr),hl
+	ld	a,22
+	call	chr
+	ld	a,32
+	call	chr
+	call	namp
+	ld	a,32
+	call	chr
+	ld	a,22
+	jp	chr
+take:
+	ld	hl,(nadr)
+	ld	(fnad),hl
+	ret
+eras:
+	ld	hl,(luc)
+	ld	(loc),hl
+	ld	hl,(nadr)
+	ld	a,32
+	call	chr
+	call	namp
+	ld	a,32
+	jp	chr
+swit:
+	ld	a,(panz)
+	or	a
+	ret	z
+	ld	a,(pust)
+	xor	1
+	ld	(pust),a
+	or	a
+	jr	nz,page1
+	ld	hl,(walt)
+	dec	h
+	ld	a,(max1)
+	jr	pack
+page1:
+	ld	hl,(walt)
+	inc	h
+	ld	a,(max2)
+pack:
+	ld	(walt),hl
+	ld	(max),a
+	ld	b,a
+	inc	b
+	push	hl
+	push	bc
+	call	cls
+	ld	hl,#209
+	ld	(loc),hl
+	pop	bc
+	pop	hl
+	call	iif
+	xor	a
+	jp	mal1
+filna:
+	ld	a,(driv)
+	add	a,65
+	call	chr
+    ld	a,":"
+	call	chr
+	ld	b,12
+	jr	nam1
+namp:
+	ld	b,8
+nam1:
+	ld	a,(hl)
+	call	chr
+	inc	hl
+	djnz	nam1
+	ret
+ink1:
+	ld	hl,(ink)
+	inc	hl
+	ld	(hl),#1c
+	ret
+ink2:
+	ld	hl,(ink)
+	inc	hl
+	ld	(hl),2
+	ret
+decz:
+	ld	c,100
+	call	subs
+dec1:
+	ld	c,10
+	call	subs
+	ld	c,1
+subs:
+	ld	b,47
+	sub	c
+	inc	b
+	jr	nc,subs+2
+	add	a,c
+	push	af
+	ld	a,b
+	call	chr
+	pop	af
+	ret
+jeck:
+	push	hl
+	xor	a
+	ld	b,16
+	ld	hl,#c050
+	call	cls0
+	pop	hl
+	ld	b,(hl)
+	inc	hl
+	inc	b
+topl:
+	push	bc
+	ld	d,(hl)
+	inc	hl
+	ld	e,(hl)
+	inc	hl
+	ld	(loc),de
+	ld	a,32
+	call	chr
+	ld	b,(hl)
+	inc	hl
+	call	nam1
+	inc	hl
+	inc	hl
+	pop	bc
+	djnz	topl
+	ret
+cls:
+	xor	a
+	ld	b,64
+	ld	hl,#c280
+cls0:
+	push	hl
+	ld	c,80
+cls1:
+	ld	(hl),a
+	inc	hl
+	dec	c
+	jr	nz,cls1
+	pop	hl
+	ld	de,#800
+	add	hl,de
+	jr	nc,noca
+	ld	de,#c050
+	add	hl,de
+noca:
+	djnz	cls0
+	jp	cler
+	;
+errn:
+	nop
+free:
+	nop
+ins:
+	nop
+max:
+	nop
+max1:
+	nop
+max2:
+	nop
+panz:
+	nop
+pust:
+	nop
+xpos:
+	nop
+adin:
+	defw	0
+filen:
+	defw	0
+fnad:
+	defw	0
+indir:
+	defw	0
+luc:
+	defw	0
+nadr:
+	defw	0
+walt:
+	defw	0
+fname:
+	defm	"        ."
+sngs:
+	defm	"SNG"
+	defb	0
+iname:
+	defm	"        ."
+inss:
+	defm	"INS"
+	defb	0
+	nop
+meld1:
+	defb	10,1,13
+	defm	"Saving "
+	defb	0
+meld2:
+	defb	10,1,9
+    defm	"Choose Ins.: "
+	defb	0
+meld3:
+	defb	10,1,13
+	defm	"Instrument "
+	defb	0
+meld9:
+	defm	" is "
+	defb	0
+pres:
+	defb	10,1,16
+	defm	"Press any key."
+	defb	0
+ertab:
+	defb	144
+	defw	der1
+	defb	194
+	defw	der2
+	defb	148
+	defw	der3
+	defb	147
+	defw	der4
+	defb	146
+	defw	der5
+	defb	196
+	defw	der6
+	defb	177
+	defw	der7
+	;
+mess2:
+
+	defb	10,1,1
+    defm	"Drive A:  00 Songs  00 Instrs  000K free"
+	defb	0
+dise:
+    defm	"Drive A: "
+	defb	0
+der0:
+	defm	"not ready"
+	defb	0
+der1:
+	defm	"Disc missing"
+	defb	0
+der2:
+	defm	"write protected"
+	defb	0
+der3:
+	defm	"Disc full"
+	defb	0
+der4:
+	defm	"Directory full"
+	defb	0
+der5:
+	defm	"File not found"
+	defb	0
+der6:
+	defm	"Disc corrupt!"
+	defb	0
+der7:
+	defm	"no ST-File!"
+	defb	0
+der8:
+	defm	"Bad Filename. Please rename!"
+	defb	0
+dert:
+	defb	13,13
+	defm	"[R]etry or [C]ancel? "
+	nop
+disko:
+	defb	7
+	defb	1,2,7
+	defm	"GET DIR"
+	defw	cat
+	defb	10,2,9
+	defm	"LOAD SONG"
+	defw	loads
+	defb	21,2,9
+	defm	"SAVE SONG"
+	defw	saves
+	defb	33,2,5
+	defm	"ERASE"
+	defw	erase
+	defb	1,3,8
+	defm	"LOAD INS"
+	defw	loadi
+	defb	11,3,8
+	defm	"SAVE INS"
+	defw	savei
+	defb	22,3,7
+	defm	"DRIVE A"
+	defw	dria
+	defb	32,3,7
+	defm	"DRIVE B"
+	defw	drib
+	end
